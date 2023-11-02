@@ -171,6 +171,7 @@ class CorefModel:  # pylint: disable=too-many-instance-attributes
         in data_dir is loaded.
         Assumes files are named like {configuration}_(e{epoch}_{time})*.pt.
         """
+        #NOTE(peft-lora): not clear how to handle peft here.
         if path is None:
             pattern = rf"{self.config.section}_\(e(\d+)_[^()]*\).*\.pt"
             files = []
@@ -262,6 +263,7 @@ class CorefModel:  # pylint: disable=too-many-instance-attributes
 
     def save_weights(self):
         """ Saves trainable models as state dicts. """
+        #NOTE(peft-lora): use efficient lora saving
         to_save: List[Tuple[str, Any]] = \
             [(key, value) for key, value in self.trainable.items()
              if self.config.bert_finetune or key != "bert"]
@@ -370,6 +372,7 @@ class CorefModel:  # pylint: disable=too-many-instance-attributes
         self.rough_scorer = RoughScorer(bert_emb, self.config).to(self.config.device)
         self.sp = SpanPredictor(bert_emb, self.config.sp_embedding_size).to(self.config.device)
 
+        #NOTE(peft-lora): interfere with lora freezing?
         self.trainable: Dict[str, torch.nn.Module] = {
             "bert": self.bert, "we": self.we,
             "rough_scorer": self.rough_scorer,
@@ -378,6 +381,7 @@ class CorefModel:  # pylint: disable=too-many-instance-attributes
         }
 
     def _build_optimizers(self):
+        #NOTE(peft-lora): interfere with lora freezing?
         n_docs = len(self._get_docs(self.config.train_data))
         self.optimizers: Dict[str, torch.optim.Optimizer] = {}
         self.schedulers: Dict[str, torch.optim.lr_scheduler.LambdaLR] = {}
